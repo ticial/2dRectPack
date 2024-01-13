@@ -200,7 +200,17 @@
           this.badBoxes = [];
           this.notPlacedBoxes = [];
           this.isPrepared = false;
-          this.fullness = -1;
+          this._fullness = -1;
+      }
+      /**
+       * Resizes the container dimensions for the Packer instance.
+       *
+       * @param width - The new width of the container.
+       * @param height - The new height of the container.
+       */
+      resizeContainer(width, height) {
+          this.containerWidth = width;
+          this.containerHeight = height;
       }
       /**
        * Clears all data, resetting the state of the packing algorithm.
@@ -218,7 +228,7 @@
           this.freeBoxes.length = 0;
           this.badBoxes.length = 0;
           this.notPlacedBoxes.length = 0;
-          this.fullness = -1;
+          this._fullness = -1;
           this.isPrepared = false;
       }
       /**
@@ -477,7 +487,7 @@
           const innerSquare = freeBoxes.reduce((accum, box) => (box.mark !== BOTTOM_RIGHT_MARK ? accum + box.square() : accum), 0);
           const boxSquare = this.packedBoxes.reduce((accum, box) => accum + box.square(), 0);
           // Calculate the fullness ratio
-          this.fullness = 1 - innerSquare / (boxSquare + innerSquare);
+          this._fullness = 1 - innerSquare / (boxSquare + innerSquare);
       }
       /**
        * Retrieves the fullness ratio of the container. If the fullness has not been calculated yet,
@@ -485,10 +495,13 @@
        *
        * @returns The fullness ratio, ranging from 0 to 1, where 0 means empty and 1 means fully occupied.
        */
-      getFullness() {
-          if (this.fullness === -1)
+      get fullness() {
+          if (this._fullness === -1)
               this.calculateFullness();
-          return this.fullness;
+          return this._fullness;
+      }
+      boxesSize() {
+          return this.boxes.length;
       }
   }
   //# sourceMappingURL=Packer.js.map
@@ -503,24 +516,62 @@
   const containerWidthInput = document.getElementById("container-width");
   const containerHeightInput = document.getElementById("container-height");
   const setupContainerButton = document.getElementById("setup-container-button");
+  let blocksParams = bloks;
+  let containerSize = { width: 350, height: 300 };
+  containerWidthInput.value = String(containerSize.width);
+  containerHeightInput.value = String(containerSize.height);
+  const packer = new Packer(containerSize.width, containerSize.height);
+  addBlocks(blocksParams);
   addRectButton.onclick = event => {
       event.preventDefault();
       const rect = {
           width: parseInt(rectWidthInput.value),
           height: parseInt(rectHeightInput.value)
       };
-      blocksParams.push(rect);
-      update();
+      addBlock(rect, packer.boxesSize());
   };
   setupContainerButton.onclick = event => {
       event.preventDefault();
-      containerSize.width = parseInt(containerWidthInput.value);
-      containerSize.height = parseInt(containerHeightInput.value);
+      resizeContainer(parseInt(containerWidthInput.value), parseInt(containerWidthInput.value));
       update();
   };
+  function resizeContainer(width, height) {
+      containerSize.width = width;
+      containerSize.height = height;
+      packer.resizeContainer(width, height);
+      update();
+  }
+  function addBlocks(blocks) {
+      blocksParams = blocks;
+      blocks.forEach((block, i) => {
+          packer.addBox(block.width, block.height, i + 1);
+      });
+      update();
+  }
+  function addBlock(block, id) {
+      blocksParams.push(block);
+      packer.addBox(block.width, block.height, id);
+      update();
+  }
+  function pack() {
+      const boxes = packer.pack();
+      const blockCoordinates = boxes.map(({ top, left, right, bottom, id }) => ({
+          top,
+          left,
+          right,
+          bottom,
+          initialOrder: id
+      }));
+      const fullness = packer.fullness;
+      return {
+          fullness,
+          blockCoordinates
+      };
+  }
   function update() {
+      const { fullness, blockCoordinates } = pack();
       fillRectList(blocksParams);
-      updateContainer(blocksParams, containerSize);
+      drawBlocks(containerSize, fullness, blockCoordinates);
   }
   function fillRectList(blocksParams) {
       rectList.innerHTML = "";
@@ -578,28 +629,7 @@
           rectDiv.append(rectIdDiv);
       }
   }
-  function updateContainer(blocksParams, containerSize) {
-      const packer = new Packer(containerSize.width, containerSize.height);
-      blocksParams.forEach((rect, i) => {
-          packer.addBox(rect.width, rect.height, i + 1);
-      });
-      const boxes = packer.pack();
-      const blockCoordinates = boxes.map(({ top, left, right, bottom, id }) => ({
-          top,
-          left,
-          right,
-          bottom,
-          initialOrder: id
-      }));
-      const fullness = packer.getFullness();
-      drawBlocks(containerSize, fullness, blockCoordinates);
-  }
-  const blocksParams = bloks;
-  const containerSize = { width: 350, height: 300 };
-  containerWidthInput.value = String(containerSize.width);
-  containerHeightInput.value = String(containerSize.height);
   update();
-  //# sourceMappingURL=index.js.map
 
 })));
 //# sourceMappingURL=bundle.js.map

@@ -9,6 +9,7 @@
   <body>
     <div class="wrapper">
       <aside class="aside">
+        <h4>Додати прямокутник</h4>
         <form class="form" action="post">
           <div class="form-row">
             <label for="rect-width">Довжина</label>
@@ -18,14 +19,15 @@
             <label for="rect-height">Ширина</label>
             <input id="rect-height" type="number" value="50" />
           </div>
-          <button id="add-rect-button">Додати прямокутник</button>
+          <button id="add-rect-button">Додати</button>
         </form>
-        <div>
+        <h4>
           Прямокутники:
-        </div>
+        </h4>
         <ol class="rect-list"></ol>
       </aside>
       <main class="main">
+        <h4>Розмір контейнера</h4>
         <form class="form" action="post">
           <div class="form-row">
             <label for="container-width">Довжина</label>
@@ -36,13 +38,13 @@
             <input id="container-height" type="number" value="300" />
           </div>
           <button id="setup-container-button">
-            Змінити розміри контейнера
+            Змінити
           </button>
         </form>
-        <div>
+        <h4>
           Fullness:
           <span id="fullness">1</span>
-        </div>
+        </h4>
         <div class="container"></div>
       </main>
     </div>

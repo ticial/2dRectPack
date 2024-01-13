@@ -12,9 +12,20 @@ class Packer {
   private badBoxes: Box[] = [];
   private notPlacedBoxes: Box[] = [];
   private isPrepared = false;
-  private fullness = -1;
+  private _fullness = -1;
 
   constructor(private containerWidth: number, private containerHeight: number) {}
+
+  /**
+   * Resizes the container dimensions for the Packer instance.
+   *
+   * @param width - The new width of the container.
+   * @param height - The new height of the container.
+   */
+  resizeContainer(width: number, height: number) {
+    this.containerWidth = width;
+    this.containerHeight = height;
+  }
 
   /**
    * Clears all data, resetting the state of the packing algorithm.
@@ -33,7 +44,7 @@ class Packer {
     this.freeBoxes.length = 0;
     this.badBoxes.length = 0;
     this.notPlacedBoxes.length = 0;
-    this.fullness = -1;
+    this._fullness = -1;
     this.isPrepared = false;
   }
 
@@ -310,7 +321,7 @@ class Packer {
     const boxSquare = this.packedBoxes.reduce((accum, box) => accum + box.square(), 0);
 
     // Calculate the fullness ratio
-    this.fullness = 1 - innerSquare / (boxSquare + innerSquare);
+    this._fullness = 1 - innerSquare / (boxSquare + innerSquare);
   }
 
   /**
@@ -319,9 +330,13 @@ class Packer {
    *
    * @returns The fullness ratio, ranging from 0 to 1, where 0 means empty and 1 means fully occupied.
    */
-  getFullness() {
-    if (this.fullness === -1) this.calculateFullness();
-    return this.fullness;
+  get fullness() {
+    if (this._fullness === -1) this.calculateFullness();
+    return this._fullness;
+  }
+
+  boxesSize() {
+    return this.boxes.length;
   }
 }
 

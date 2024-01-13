@@ -1,6 +1,6 @@
 import bloks from "./blocksData.json";
 import Packer from "./packer/Packer";
-import { RectCoord, Size } from "./types";
+import { RectCoord, Size } from "./packer/types";
 
 const template = document.getElementById("rect-data-template") as HTMLTemplateElement;
 const containerDiv = document.querySelector(".container") as HTMLElement;
@@ -15,26 +15,72 @@ const containerWidthInput = document.getElementById("container-width") as HTMLIn
 const containerHeightInput = document.getElementById("container-height") as HTMLInputElement;
 const setupContainerButton = document.getElementById("setup-container-button") as HTMLElement;
 
+let blocksParams: Size[] = bloks;
+let containerSize: Size = { width: 350, height: 300 };
+
+containerWidthInput.value = String(containerSize.width);
+containerHeightInput.value = String(containerSize.height);
+
+const packer = new Packer(containerSize.width, containerSize.height);
+addBlocks(blocksParams);
+
 addRectButton.onclick = event => {
   event.preventDefault();
   const rect: Size = {
     width: parseInt(rectWidthInput.value),
     height: parseInt(rectHeightInput.value)
   };
-  blocksParams.push(rect);
-  update();
+  addBlock(rect, packer.boxesSize());
 };
 
 setupContainerButton.onclick = event => {
   event.preventDefault();
-  containerSize.width = parseInt(containerWidthInput.value);
-  containerSize.height = parseInt(containerHeightInput.value);
+  resizeContainer(parseInt(containerWidthInput.value), parseInt(containerWidthInput.value));
   update();
 };
 
+function resizeContainer(width: number, height: number) {
+  containerSize.width = width;
+  containerSize.height = height;
+  packer.resizeContainer(width, height);
+  update();
+}
+
+function addBlocks(blocks: Size[]) {
+  blocksParams = blocks;
+  blocks.forEach((block, i) => {
+    packer.addBox(block.width, block.height, i + 1);
+  });
+  update();
+}
+
+function addBlock(block: Size, id: number) {
+  blocksParams.push(block);
+  packer.addBox(block.width, block.height, id);
+  update();
+}
+
+function pack() {
+  const boxes = packer.pack();
+  const blockCoordinates: RectCoord[] = boxes.map(({ top, left, right, bottom, id }) => ({
+    top,
+    left,
+    right,
+    bottom,
+    initialOrder: id
+  }));
+  const fullness = packer.fullness;
+
+  return {
+    fullness,
+    blockCoordinates
+  };
+}
+
 function update() {
+  const { fullness, blockCoordinates } = pack();
   fillRectList(blocksParams);
-  updateContainer(blocksParams, containerSize);
+  drawBlocks(containerSize, fullness, blockCoordinates);
 }
 
 function fillRectList(blocksParams: Size[]) {
@@ -104,29 +150,5 @@ function drawBlocks(containerSize: Size, fullness: number, blockCoordinates: Rec
     rectDiv.append(rectIdDiv);
   }
 }
-
-function updateContainer(blocksParams: Size[], containerSize: Size) {
-  const packer = new Packer(containerSize.width, containerSize.height);
-  blocksParams.forEach((rect, i) => {
-    packer.addBox(rect.width, rect.height, i + 1);
-  });
-  const boxes = packer.pack();
-  const blockCoordinates = boxes.map(({ top, left, right, bottom, id }) => ({
-    top,
-    left,
-    right,
-    bottom,
-    initialOrder: id
-  }));
-  const fullness = packer.getFullness();
-
-  drawBlocks(containerSize, fullness, blockCoordinates);
-}
-
-const blocksParams: Size[] = bloks;
-const containerSize: Size = { width: 350, height: 300 };
-
-containerWidthInput.value = String(containerSize.width);
-containerHeightInput.value = String(containerSize.height);
 
 update();
