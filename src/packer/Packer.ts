@@ -1,4 +1,5 @@
 import { Box } from "./Box";
+import { PackDirection } from "./types";
 
 const BOTTOM_RIGHT_MARK = Number.MAX_SAFE_INTEGER;
 
@@ -14,7 +15,22 @@ class Packer {
   private isPrepared = false;
   private _fullness = -1;
 
-  constructor(private containerWidth: number, private containerHeight: number) {}
+  constructor(private containerWidth: number, private containerHeight: number, private direction: PackDirection = "none") {}
+
+  /**
+   * Set the packing direction for the Packer.
+   * @param direction - The packing direction.
+   * @remarks
+   * This method sets the packing direction for the Packer. The direction parameter
+   * specifies how the boxes should be arranged during the packing process.
+   * - "none": No specific direction, let the algorithm choose the optimal direction.
+   * - "left": Pack boxes aligning them from left to right.
+   * - "top": Pack boxes aligning them from top to bottom.
+   */
+  setDirection(direction: PackDirection) {
+    this.direction = direction;
+    this.isPrepared = false;
+  }
 
   /**
    * Resizes the container dimensions for the Packer instance.
@@ -25,6 +41,7 @@ class Packer {
   resizeContainer(width: number, height: number) {
     this.containerWidth = width;
     this.containerHeight = height;
+    this.isPrepared = false;
   }
 
   /**
@@ -200,6 +217,9 @@ class Packer {
       if (box.left === right || box.right === left) score += this.commonIntervalLength(box.top, box.bottom, top, bottom);
       if (box.top === bottom || box.bottom === top) score += this.commonIntervalLength(box.left, box.right, left, right);
     }
+
+    if (this.direction === "top") score += top;
+    if (this.direction === "left") score += left;
     return score;
   }
 
@@ -337,6 +357,10 @@ class Packer {
 
   boxesSize() {
     return this.boxes.length;
+  }
+
+  getBoxes() {
+    return this.boxes;
   }
 }
 

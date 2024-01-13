@@ -5,16 +5,18 @@ import json from "@rollup/plugin-json";
 module.exports = {
   input: "src/index.ts",
   output: {
-    file: "dist/js/bundle.js",
-    format: "umd",
+    dir: "dist",
+    format: "cjs",
     name: "projectbundle",
     sourcemap: true
   },
   plugins: [
     typescript(),
-    json(),
+    json({
+      preferConst: true
+    }),
     copy({
-      targets: ["src/www/index.html", "src/www/style.css"],
+      targets: ["src/www/index.html", "src/www/style.css", "src/blocksData.json"],
       outputFolder: "dist"
     })
   ]

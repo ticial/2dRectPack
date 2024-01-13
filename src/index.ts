@@ -1,6 +1,5 @@
-import bloks from "./blocksData.json";
 import Packer from "./packer/Packer";
-import { RectCoord, Size } from "./packer/types";
+import { PackDirection, RectCoord, Size } from "./packer/types";
 
 const template = document.getElementById("rect-data-template") as HTMLTemplateElement;
 const containerDiv = document.querySelector(".container") as HTMLElement;
@@ -15,14 +14,15 @@ const containerWidthInput = document.getElementById("container-width") as HTMLIn
 const containerHeightInput = document.getElementById("container-height") as HTMLInputElement;
 const setupContainerButton = document.getElementById("setup-container-button") as HTMLElement;
 
-let blocksParams: Size[] = bloks;
+const packingDirectionSelect = document.getElementById("packing-direction") as HTMLSelectElement;
+
+let blocksParams: Size[] = [];
 let containerSize: Size = { width: 350, height: 300 };
 
 containerWidthInput.value = String(containerSize.width);
 containerHeightInput.value = String(containerSize.height);
 
-const packer = new Packer(containerSize.width, containerSize.height);
-addBlocks(blocksParams);
+const packer = new Packer(containerSize.width, containerSize.height, "none");
 
 addRectButton.onclick = event => {
   event.preventDefault();
@@ -30,13 +30,16 @@ addRectButton.onclick = event => {
     width: parseInt(rectWidthInput.value),
     height: parseInt(rectHeightInput.value)
   };
-  addBlock(rect, packer.boxesSize());
+  addBlock(rect, blocksParams.length);
 };
 
 setupContainerButton.onclick = event => {
   event.preventDefault();
-  resizeContainer(parseInt(containerWidthInput.value), parseInt(containerWidthInput.value));
-  update();
+  resizeContainer(parseInt(containerWidthInput.value), parseInt(containerHeightInput.value));
+};
+
+packingDirectionSelect.onchange = event => {
+  changeDirection(packingDirectionSelect.value as PackDirection);
 };
 
 function resizeContainer(width: number, height: number) {
@@ -47,16 +50,24 @@ function resizeContainer(width: number, height: number) {
 }
 
 function addBlocks(blocks: Size[]) {
-  blocksParams = blocks;
   blocks.forEach((block, i) => {
-    packer.addBox(block.width, block.height, i + 1);
+    packer.addBox(block.width, block.height, i);
   });
+
+  blocksParams = blocks;
+  fillRectList();
   update();
 }
 
 function addBlock(block: Size, id: number) {
-  blocksParams.push(block);
   packer.addBox(block.width, block.height, id);
+  blocksParams.push(block);
+  fillRectList();
+  update();
+}
+
+function changeDirection(direction: PackDirection) {
+  packer.setDirection(direction);
   update();
 }
 
@@ -79,11 +90,10 @@ function pack() {
 
 function update() {
   const { fullness, blockCoordinates } = pack();
-  fillRectList(blocksParams);
   drawBlocks(containerSize, fullness, blockCoordinates);
 }
 
-function fillRectList(blocksParams: Size[]) {
+function fillRectList() {
   rectList.innerHTML = "";
   for (const block of blocksParams) {
     const rectItem = template.content.cloneNode(true) as HTMLElement;
@@ -122,8 +132,8 @@ function createColorMapGenerator() {
 function drawBlocks(containerSize: Size, fullness: number, blockCoordinates: RectCoord[]) {
   fullnessSpan.textContent = (fullness * 100).toFixed(2);
   containerDiv.innerHTML = "";
-  containerDiv.style.width = containerSize.width + "px";
-  containerDiv.style.height = containerSize.height + "px";
+  containerDiv.style.minWidth = containerSize.width + "px";
+  containerDiv.style.minHeight = containerSize.height + "px";
 
   const getColor = createColorMapGenerator();
 
@@ -151,4 +161,20 @@ function drawBlocks(containerSize: Size, fullness: number, blockCoordinates: Rec
   }
 }
 
-update();
+async function loadBlocksData() {
+  try {
+    const response = await fetch("./blocksData.json");
+
+    if (!response.ok) {
+      throw new Error(`Failed to load blocksData.json (HTTP ${response.status})`);
+    }
+
+    const blocksParams = await response.json();
+    addBlocks(blocksParams);
+    update();
+  } catch (error) {
+    console.error("Error loading blocksData.json:", error.message);
+  }
+}
+
+loadBlocksData();
